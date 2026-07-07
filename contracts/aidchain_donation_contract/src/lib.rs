@@ -10,7 +10,7 @@
 //! this contract is the canonical, auditable record.
 
 use soroban_sdk::{
-    contract, contracterror, contractevent, contractimpl, contracttype, Address, Bytes, Env,
+    contract, contracterror, contractimpl, contracttype, symbol_short, Address, Bytes, Env,
     String, Symbol,
 };
 
@@ -75,7 +75,7 @@ pub enum ContractError {
     Overflow = 10,
 }
 
-#[contractevent]
+#[contracttype]
 #[derive(Clone, Debug)]
 pub struct CampaignCreated {
     pub campaign_id: u64,
@@ -83,7 +83,7 @@ pub struct CampaignCreated {
     pub target_amount: i128,
 }
 
-#[contractevent]
+#[contracttype]
 #[derive(Clone, Debug)]
 pub struct DonationReceived {
     pub campaign_id: u64,
@@ -92,7 +92,7 @@ pub struct DonationReceived {
     pub total_donated: i128,
 }
 
-#[contractevent]
+#[contracttype]
 #[derive(Clone, Debug)]
 pub struct ExpenseAdded {
     pub campaign_id: u64,
@@ -101,7 +101,7 @@ pub struct ExpenseAdded {
     pub proof_hash: Bytes,
 }
 
-#[contractevent]
+#[contracttype]
 #[derive(Clone, Debug)]
 pub struct CampaignClosed {
     pub campaign_id: u64,
@@ -163,12 +163,14 @@ impl AidChainDonationContract {
             .persistent()
             .extend_ttl(&key, LEDGER_TTL_THRESHOLD, LEDGER_BUMP);
 
-        CampaignCreated {
-            campaign_id,
-            ngo_wallet,
-            target_amount,
-        }
-        .publish(&env);
+        env.events().publish(
+            (symbol_short!("Campaign"), symbol_short!("created")),
+            CampaignCreated {
+                campaign_id,
+                ngo_wallet,
+                target_amount,
+            },
+        );
 
         Ok(())
     }
@@ -234,13 +236,15 @@ impl AidChainDonationContract {
             .persistent()
             .extend_ttl(&key, LEDGER_TTL_THRESHOLD, LEDGER_BUMP);
 
-        DonationReceived {
-            campaign_id,
-            donor_wallet,
-            amount,
-            total_donated: campaign.total_donated,
-        }
-        .publish(&env);
+        env.events().publish(
+            (symbol_short!("Campaign"), symbol_short!("donated")),
+            DonationReceived {
+                campaign_id,
+                donor_wallet,
+                amount,
+                total_donated: campaign.total_donated,
+            },
+        );
 
         Ok(campaign.total_donated)
     }
@@ -321,13 +325,15 @@ impl AidChainDonationContract {
             .persistent()
             .extend_ttl(&key, LEDGER_TTL_THRESHOLD, LEDGER_BUMP);
 
-        ExpenseAdded {
-            campaign_id,
-            ngo_wallet,
-            amount,
-            proof_hash,
-        }
-        .publish(&env);
+        env.events().publish(
+            (symbol_short!("Campaign"), symbol_short!("expensed")),
+            ExpenseAdded {
+                campaign_id,
+                ngo_wallet,
+                amount,
+                proof_hash,
+            },
+        );
 
         Ok(())
     }
@@ -397,7 +403,10 @@ impl AidChainDonationContract {
             .persistent()
             .extend_ttl(&key, LEDGER_TTL_THRESHOLD, LEDGER_BUMP);
 
-        CampaignClosed { campaign_id }.publish(&env);
+        env.events().publish(
+            (symbol_short!("Campaign"), symbol_short!("closed")),
+            CampaignClosed { campaign_id },
+        );
 
         Ok(())
     }
@@ -405,7 +414,7 @@ impl AidChainDonationContract {
     /// Contract version, exposed for the frontend to display / for CI to
     /// verify the deployed WASM matches the expected build.
     pub fn version(_env: Env) -> Symbol {
-        Symbol::short("v1")
+        symbol_short!("v1")
     }
 }
 
