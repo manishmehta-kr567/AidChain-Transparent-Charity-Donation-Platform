@@ -54,7 +54,7 @@ export const getOnChainCampaign = async (
 ): Promise<OnChainCampaign | null> => {
   try {
     const client = getClient();
-    const result = await client.get_campaign({ campaign_id: contractCampaignId } as never);
+    const result = await (client as any).get_campaign({ campaign_id: contractCampaignId } as never);
     return result as unknown as OnChainCampaign;
   } catch (err) {
     console.warn('[contract] on-chain campaign read failed, falling back to DB only:', err);
