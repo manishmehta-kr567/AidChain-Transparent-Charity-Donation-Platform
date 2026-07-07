@@ -1,0 +1,57 @@
+name: Deploy Stellar Contract
+
+on:
+  push:
+    paths:
+      - 'contracts/**'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts/aidchain_donation_contract
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: contracts/aidchain_donation_contract
+
+      - name: Install Stellar CLI
+        run: |
+          curl -sSL https://github.com/stellar/stellar-cli/releases/latest/download/stellar-cli-linux-amd64.tar.gz | tar -xz
+          sudo mv stellar-cli /usr/local/bin/
+
+      - name: Build Contract
+        run: stellar contract build
+
+      - name: Setup Identity and Fund
+        run: |
+          stellar keys generate deployer --network testnet
+
+      - name: Deploy Contract to Testnet
+        id: deploy
+        run: |
+          CONTRACT_ID=$(stellar contract deploy \
+            --wasm target/wasm32-unknown-unknown/release/aidchain_donation_contract.wasm \
+            --source deployer \
+            --network testnet)
+          
+          echo "Deployed Contract ID: $CONTRACT_ID"
+          echo "contract_id=$CONTRACT_ID" >> $GITHUB_OUTPUT
+
+      - name: Print Contract ID
+        run: |
+          echo "🚀 Contract deployed successfully to Stellar Testnet!"
+          echo "📜 Contract ID: ${{ steps.deploy.outputs.contract_id }}"
+          echo "Please copy this Contract ID and update your Vercel and Render Environment Variables (VITE_CONTRACT_ID and CONTRACT_ID)."
