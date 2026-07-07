@@ -39,6 +39,7 @@ jobs:
       - name: Setup Identity and Fund
         run: |
           stellar keys generate deployer --network testnet
+          stellar keys fund deployer --network testnet
 
       - name: Deploy Contract to Testnet
         id: deploy
