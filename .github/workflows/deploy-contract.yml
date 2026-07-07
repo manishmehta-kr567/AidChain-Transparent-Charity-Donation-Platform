@@ -28,9 +28,7 @@ jobs:
           workspaces: contracts/aidchain_donation_contract
 
       - name: Install Stellar CLI
-        run: |
-          curl -sSL https://github.com/stellar/stellar-cli/releases/latest/download/stellar-cli-linux-amd64.tar.gz | tar -xz
-          sudo mv stellar-cli /usr/local/bin/
+        run: cargo install --locked stellar-cli
 
       - name: Build Contract
         run: stellar contract build
